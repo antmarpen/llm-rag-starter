@@ -3,3 +3,5 @@ chroma_langchain_db/**
 api/config/config.json
 
 .idea
+
+*.log
