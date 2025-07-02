@@ -12,22 +12,34 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 
+from api.utils.logger import Logger
+
 
 class RAGService:
     """Simple RAG service using LangChain and Chroma."""
 
     def __init__(self) -> None:
+        self._logger = Logger.get_logger(self.__class__)
+
+        self._logger.debug("Loading LLM model")
+        self._ensure_api_key()
         self.llm = init_chat_model("gpt-4o-mini", model_provider="openai")
+
+        self._logger.debug("Loading Embeddings")
         self.embeddings = HuggingFaceEmbeddings(
             model_name="sentence-transformers/all-mpnet-base-v2"
         )
+
+        self._logger.debug("Loading Chroma Database")
         self.vector_store = Chroma(
             collection_name="example_collection",
             embedding_function=self.embeddings,
             persist_directory="./chroma_langchain_db",
         )
+
+        self._logger.debug("Loading Prompt")
         self.prompt = hub.pull("rlm/rag-prompt")
-        self._ensure_api_key()
+
         # Load blog by default for PoC
         # FIXME: This will be removed from here as this part will be done periodically and offline later
         if not self.vector_store.get()['ids']:
@@ -37,8 +49,11 @@ class RAGService:
     def _ensure_api_key() -> None:
         if os.environ.get("OPENAI_API_KEY"):
             return
-        if os.path.exists("config.json"):
-            with open("config.json") as config_file:
+
+        current_directory = os.getcwd()
+        config_path = os.path.join(current_directory + "/api/config/config.json")
+        if os.path.exists(config_path):
+            with open(config_path) as config_file:
                 config = json.load(config_file)
                 if "llmModelAPI" in config:
                     os.environ["OPENAI_API_KEY"] = config["llmModelAPI"]
@@ -47,9 +62,6 @@ class RAGService:
 
     def _load_blog(self) -> None:
         """Load and index blog content."""
-        os.environ["USER_AGENT"] = (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0"
-        )
         loader = WebBaseLoader(
             web_paths=("https://lilianweng.github.io/posts/2023-06-23-agent/",),
             bs_kwargs={

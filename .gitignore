@@ -1,5 +1,5 @@
 chroma_langchain_db/**
 
-config.json
+api/config/config.json
 
 .idea

@@ -16,8 +16,8 @@ from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 
 if not os.environ.get("OPENAI_API_KEY"):
-    if os.path.exists("config.json"):
-        with open("config.json") as config_file:
+    if os.path.exists("api/config/config.json"):
+        with open("api/config/config.json") as config_file:
             config = json.load(config_file)
             if "llmModelAPI" in config:
                 os.environ["OPENAI_API_KEY"] = config["llmModelAPI"]
