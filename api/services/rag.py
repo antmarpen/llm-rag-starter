@@ -53,10 +53,11 @@ class RAGService:
     def _generate(self, question: str, docs: List[Document]) -> tuple[str, str]:
         docs_content = "\n\n".join(doc.page_content for doc in docs)
         messages = self.prompt.invoke({"question": question, "context": docs_content})
+        final_prompt = "\n\n".join([f"{x.type}: {x.content}" for x in self.prompt.format_prompt(question=question, context=docs_content).to_messages()])
         response = self.llm.invoke(messages)
-        return response.content, docs_content
+        return response.content, final_prompt
 
     def ask(self, question: str) -> tuple[str, str]:
         docs = self._retrieve(question)
-        answer, docs_content = self._generate(question, docs)
-        return answer, docs_content
+        answer, final_prompt = self._generate(question, docs)
+        return answer, final_prompt
