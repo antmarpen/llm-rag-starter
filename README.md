@@ -1,4 +1,4 @@
-# RAG PoC
+# MCP Server PoC
 
 This repository contains a proof of concept (**PoC**) that demonstrates a simple *Retrieval Augmented Generation* (RAG) flow built with Python and [LangChain](https://python.langchain.com/) using [Chroma](https://www.trychroma.com/) as the vector database.
 
@@ -29,25 +29,15 @@ The project downloads information from several sources (called *integrations*) a
 ![image](docs/images/Workflow.png)
 
 
-1. **User Request is received by the MCP API**  
-   The user sends a question via any channel (UI, Slack, etc.), and it reaches the API layer of the MCP Server.
-
-2. **The API forwards the request to the RAG Service**  
-   The RAG component handles orchestrating the information retrieval and response generation.
-
-3. **RAG Service queries the Chroma DB**  
-   It looks for relevant documents that have been previously ingested and vectorized.
-
-4. **(Optional)** If relevant documents are not found or are insufficient,  
-   the RAG Service may trigger real-time calls to integrations (e.g., Confluence, Jira) to fetch additional context.
-
-5. **RAG Service sends a composed prompt to the LLM Model**  
-   This includes the user's question and the retrieved context.
-
-6. **The model returns a generated answer to the RAG Service**
-
-7. **The RAG Service sends the final response to the API**,  
-   which then returns it to the user.
+| Step | Component         | Description                                                                                 |
+|------|-------------------|---------------------------------------------------------------------------------------------|
+| 1    | API               | **User request is received** from any channel (UI, Slack, etc.)                             |
+| 2    | API → RAG Service | **API forwards the question** to the RAG Service                                            |
+| 3    | RAG Service       | **Queries the Chroma DB** to retrieve relevant, pre-indexed documents from the integrations |
+| 4    | RAG Service       | **Composes a prompt** with the question and the retrieved context and send it to the LLM    |
+| 5    | LLM               | **Generates an answer** based on the enriched prompt                                        |
+| 6    | RAG Service → API | **Returns the generated response** to the API                                               |
+| 7    | API               | **Sends the final response** back to the user                                               
 
 ---
 
