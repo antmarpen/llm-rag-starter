@@ -27,10 +27,17 @@ class BaseIntegration(ABC):
         """Return a list of documents to store in the vector DB."""
         raise NotImplementedError
 
+    def get_interval(self) -> int:
+        """Return the interval between executions.
+
+        It can be overridden in case the interval must be changed. Value by default 3600 (1 hour)"""
+        return self.interval
+
     # ------------------------------------------------------------------
     # Helper utilities
     # ------------------------------------------------------------------
-    def _doc_id(self, doc: Document) -> str:
+    @staticmethod
+    def _doc_id(doc: Document) -> str:
         """Return a stable identifier for a document."""
         source = doc.metadata.get("source")
         if source is not None:
@@ -38,11 +45,13 @@ class BaseIntegration(ABC):
         # Fall back to hashing the content if no source is available
         return hashlib.sha256(doc.page_content.encode("utf-8")).hexdigest()
 
-    def _doc_hash(self, doc: Document) -> str:
+    @staticmethod
+    def _doc_hash(doc: Document) -> str:
         """Hash of the document content used to detect modifications."""
         return hashlib.sha256(doc.page_content.encode("utf-8")).hexdigest()
 
-    def _split(self, docs: Iterable[Document]) -> List[Document]:
+    @staticmethod
+    def _split(docs: Iterable[Document]) -> List[Document]:
         splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
         return splitter.split_documents(list(docs))
 
@@ -72,7 +81,8 @@ class BaseIntegration(ABC):
                 self._logger.error(
                     f"Integration {self.__class__.__name__} failed: {exc}"
                 )
-            await asyncio.sleep(self.interval)
+            self._logger.debug(f"Integration task: {self.__class__.__name__} finished. It will be executed again in {self.get_interval()} seconds.")
+            await asyncio.sleep(self.get_interval())
 
     async def _process_documents(self, docs: Iterable[Document]) -> None:
         new_docs: List[Document] = []

@@ -34,9 +34,8 @@ class Server(FastAPI):
 
     async def ask_question(self, question: Question) -> APIResponseWithData[Answer]:
         """Endpoint that receives a question and returns the generated answer."""
-        answer, docs_content = self.rag_service.ask(question.query)
-        # response = APIResponseWithData(success=True, data=Answer(response=answer))
-        response = APIResponseWithData(success=True, data=(Answer(response=answer), docs_content))
+        answer, final_prompt = self.rag_service.ask(question.query)
+        response = APIResponseWithData(success=True, data=Answer(response=answer, prompt_sent=final_prompt))
         return response
 
     @staticmethod
