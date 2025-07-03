@@ -27,7 +27,7 @@ class BaseIntegration(ABC):
     async def run(self) -> None:
         """Periodically load documents and store them."""
         while True:
-            self._logger.info(f"Running integration task: {self.__class__.__name__}")
+            self._logger.debug(f"Running integration task: {self.__class__.__name__}")
             try:
                 docs = await self.load_documents()
                 if docs:

@@ -77,6 +77,10 @@ class Logger:
         """
         # Derive module_name as "package.module.ClassName"
         module_name = f"{clazz.__module__}.{clazz.__name__}"
+
+        if "__main__" in module_name:
+            module_name = module_name.replace("__main__", "main")
+
         key = module_name
         if key in cls._instances:
             return cls._instances[key]

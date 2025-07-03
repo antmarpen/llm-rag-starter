@@ -28,14 +28,19 @@ class IntegrationManager:
             self._logger.warning(f"Invalid integration to register")
 
     def register_all(self, vector_store) -> None:
+        self._logger.debug("Registering integrations")
         integrations = files.get_all_subclasses(BaseIntegration, "integrations")
 
         for integration in integrations:
+            self._logger.debug(f"Registering integration {integration.__name__}")
             self.register(integration, vector_store)
+            self._logger.debug(f"Integration {integration.__name__} registered successfully")
+
+        self._logger.debug("All integrations were registered successfully")
 
 
     async def start_all(self) -> None:
         for integration_name, integration in self._integrations.items():
-            self._logger.info(f"Starting {integration_name}")
+            self._logger.debug(f"Starting {integration_name}")
             asyncio.create_task(integration.run())
-            self._logger.info(f"Finished {integration_name}")
+            self._logger.debug(f"Finished {integration_name}")
