@@ -1,49 +1,36 @@
-import os
-import json
 import getpass
+import json
+import os
 from typing import List
 
-import bs4
-from langchain import hub
 from langchain.chat_models import init_chat_model
-from langchain_community.document_loaders import WebBaseLoader
-from langchain_core.documents import Document
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_core.documents import Document
+from langchain_core.prompts import ChatPromptTemplate
 
-from api.utils.logger import Logger
+from utils.logger import Logger
 
 
 class RAGService:
     """Simple RAG service using LangChain and Chroma."""
 
-    def __init__(self) -> None:
+    def __init__(self, vector_store: Chroma) -> None:
         self._logger = Logger.get_logger(self.__class__)
 
-        self._logger.debug("Loading LLM model")
+        self._logger.debug("Loading LLM models")
         self._ensure_api_key()
         self.llm = init_chat_model("gpt-4o-mini", model_provider="openai")
 
-        self._logger.debug("Loading Embeddings")
-        self.embeddings = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-mpnet-base-v2"
-        )
-
-        self._logger.debug("Loading Chroma Database")
-        self.vector_store = Chroma(
-            collection_name="example_collection",
-            embedding_function=self.embeddings,
-            persist_directory="./chroma_langchain_db",
-        )
+        self.vector_store = vector_store
 
         self._logger.debug("Loading Prompt")
-        self.prompt = hub.pull("rlm/rag-prompt")
-
-        # Load blog by default for PoC
-        # FIXME: This will be removed from here as this part will be done periodically and offline later
-        if not self.vector_store.get()['ids']:
-            self._load_blog()
+        self.prompt = ChatPromptTemplate([
+            ("human", """You're an assistant for question-and-answer tasks. You will be given the user's question in the following format: "Question: <user's question>", along with related context in the format: "Context: <provided context>". Limit your answer to a maximum of three sentences and keep it concise. If no context is provided, simply respond that you don't have enough information to answer.
+                        Question: {question} 
+                        Context: {context} 
+                        Answer:""")
+        ])
+        # self.prompt = hub.pull("rlm/rag-prompt")
 
     @staticmethod
     def _ensure_api_key() -> None:
@@ -60,29 +47,16 @@ class RAGService:
                     return
         os.environ["OPENAI_API_KEY"] = getpass.getpass("Enter API key for OpenAI: ")
 
-    def _load_blog(self) -> None:
-        """Load and index blog content."""
-        loader = WebBaseLoader(
-            web_paths=("https://lilianweng.github.io/posts/2023-06-23-agent/",),
-            bs_kwargs={
-                "parse_only": bs4.SoupStrainer(class_=("post-content", "post-title", "post-header"))
-            },
-        )
-        docs = loader.load()
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-        all_splits = text_splitter.split_documents(docs)
-        self.vector_store.add_documents(documents=all_splits)
-
     def _retrieve(self, question: str) -> List[Document]:
         return self.vector_store.similarity_search(question)
 
-    def _generate(self, question: str, docs: List[Document]) -> str:
+    def _generate(self, question: str, docs: List[Document]) -> tuple[str, str]:
         docs_content = "\n\n".join(doc.page_content for doc in docs)
         messages = self.prompt.invoke({"question": question, "context": docs_content})
         response = self.llm.invoke(messages)
-        return response.content
+        return response.content, docs_content
 
-    def ask(self, question: str) -> str:
+    def ask(self, question: str) -> tuple[str, str]:
         docs = self._retrieve(question)
-        answer = self._generate(question, docs)
-        return answer
+        answer, docs_content = self._generate(question, docs)
+        return answer, docs_content

@@ -51,7 +51,8 @@ class Logger:
     DEFAULT_LOG_DIR      = "logs"
     CORE_LOGFILE         = os.path.join(DEFAULT_LOG_DIR, "core.log")
     _instances           = {}
-    _console_handler     = None
+    _console_handlers     = []
+    _file_handlers = []
 
     @classmethod
     def set_level(cls, lvl: LoggerLevel):
@@ -60,8 +61,12 @@ class Logger:
         """
         root = logging.getLogger()
         root.setLevel(lvl.level_no)
-        if cls._console_handler:
-            cls._console_handler.setLevel(lvl.level_no)
+
+        for ch in cls._console_handlers:
+            ch.setLevel(lvl.level_no)
+
+        for fh in cls._file_handlers:
+            fh.setLevel(lvl.level_no)
 
     @classmethod
     def get_logger(cls, clazz: type) -> BaseLogger:
@@ -82,13 +87,12 @@ class Logger:
         # Configure handlers only once per logger
         if not logger.handlers:
             # --- Console handler singleton ---
-            if cls._console_handler is None:
-                ch = logging.StreamHandler()
-                fmt = "%(asctime)s - [%(levelname)s] %(name)s - %(message)s"
-                ch.setFormatter(ColoredFormatter(fmt, "%Y-%m-%d %H:%M:%S"))
-                ch.setLevel(logging.INFO)
-                logging.getLogger().addHandler(ch)
-                cls._console_handler = ch
+            ch = logging.StreamHandler()
+            fmt = "%(asctime)s - [%(levelname)s] %(name)s - %(message)s"
+            ch.setFormatter(ColoredFormatter(fmt, "%Y-%m-%d %H:%M:%S"))
+            ch.setLevel(logging.getLogger().level)
+            logger.addHandler(ch)
+            cls._console_handlers.append(ch)
 
 
             log_path = cls.CORE_LOGFILE
@@ -100,12 +104,13 @@ class Logger:
                 backupCount=3,
                 encoding="utf-8"
             )
-            fh.setLevel(logging.DEBUG)
+            fh.setLevel(logging.getLogger().level)
             fh.setFormatter(logging.Formatter(
                 "%(asctime)s - [%(levelname)s] %(name)s - %(message)s",
                 "%Y-%m-%d %H:%M:%S"
             ))
             logger.addHandler(fh)
+            cls._file_handlers.append(fh)
 
         # Inherit global level
         logger.setLevel(logging.DEBUG)
