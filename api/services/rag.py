@@ -17,7 +17,7 @@ class RAGService:
     def __init__(self, vector_store: Chroma) -> None:
         self._logger = Logger.get_logger(self.__class__)
 
-        self._logger.debug("Loading LLM models")
+        self._logger.debug("Loading LLM")
         self._ensure_api_key()
         self.llm = init_chat_model("gpt-4o-mini", model_provider="openai")
 
@@ -42,8 +42,8 @@ class RAGService:
         if os.path.exists(config_path):
             with open(config_path) as config_file:
                 config = json.load(config_file)
-                if "llmModelAPI" in config:
-                    os.environ["OPENAI_API_KEY"] = config["llmModelAPI"]
+                if "llmAPI" in config:
+                    os.environ["OPENAI_API_KEY"] = config["llmAPI"]
                     return
         os.environ["OPENAI_API_KEY"] = getpass.getpass("Enter API key for OpenAI: ")
 
