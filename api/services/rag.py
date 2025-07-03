@@ -3,11 +3,11 @@ import json
 import os
 from typing import List
 
-from langchain.chat_models import init_chat_model
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
 
+from api.ai.custom_models.my_custom_llm import MyCustomLLM
 from utils.logger import Logger
 
 
@@ -19,7 +19,8 @@ class RAGService:
 
         self._logger.debug("Loading LLM")
         self._ensure_api_key()
-        self.llm = init_chat_model("gpt-4o-mini", model_provider="openai")
+        # self.llm = init_chat_model("gpt-4o-mini", model_provider="openai")
+        self.llm = MyCustomLLM(model="my_custom_model")
 
         self.vector_store = vector_store
 
