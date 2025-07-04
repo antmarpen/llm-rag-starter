@@ -5,7 +5,8 @@ from chromadb import Settings
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 
-from api.server import Server
+from api.api_server import APIServer
+from api.mcp_server import MCPServer
 from integrations.core.manager import IntegrationManager
 from utils.logger import Logger, LoggerLevel
 
@@ -45,7 +46,10 @@ class Application:
         self.__logger.debug("Chroma database loaded successfully")
 
         # API Server
-        self.api = Server(title="RAG API", vector_store=self.vector_store)
+        self.api = APIServer(title="RAG API", vector_store=self.vector_store)
+
+        # MCP Server
+        self.mcp = MCPServer(vector_store=self.vector_store)
 
         # Integration Manager
         self.__logger.info("Initializing integration manager")
@@ -56,17 +60,28 @@ class Application:
     async def __run_integrations(self):
         await self.integration_manager.start_all()
 
-    async def run(self):
-        await self.__run_integrations()
+    def run(self):
+        asyncio.run(self.__run_integrations())
 
         host = "0.0.0.0"
-        port = 5000
+        api_port = 5000
+        mcp_port = 8000
 
-        config = uvicorn.Config(self.api, host=host, port=port, log_config=None, reload=debug)
-        server = uvicorn.Server(config)
-        self.__logger.info("Server started successfully")
-        self.__logger.info(f"Server running on http://{host}:{port}")
-        await server.serve()
+        use_api = False
+        use_mcp = True
+        if use_api:
+            config = uvicorn.Config(self.api, host=host, port=api_port, log_config=None, reload=debug)
+            server = uvicorn.Server(config)
+            self.__logger.info("API Server started successfully")
+            self.__logger.info(f"API Server running on http://{host}:{api_port}")
+            # asyncio.run(await server.serve())
+
+        if use_mcp:
+            self.mcp.settings.host = host
+            self.mcp.settings.port = mcp_port
+
+            mcp_transport_protocol = "streamable-http"
+            self.mcp.run(transport=mcp_transport_protocol)
 
 debug = os.environ.get("DEBUG", "false").lower() in {"1", "true", "yes"}
 if debug:
@@ -78,4 +93,4 @@ _app_instance = Application()
 app = _app_instance.api
 
 if __name__ == "__main__":
-    asyncio.run(_app_instance.run())
+    _app_instance.run()

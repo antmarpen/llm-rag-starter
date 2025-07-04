@@ -47,7 +47,7 @@ class RAGService:
                     return
         os.environ["OPENAI_API_KEY"] = getpass.getpass("Enter API key for OpenAI: ")
 
-    def _retrieve(self, question: str) -> List[Document]:
+    def retrieve(self, question: str) -> List[Document]:
         return self.vector_store.similarity_search(question)
 
     def _generate(self, question: str, docs: List[Document]) -> tuple[str, str]:
@@ -58,6 +58,6 @@ class RAGService:
         return response.content, final_prompt
 
     def ask(self, question: str) -> tuple[str, str]:
-        docs = self._retrieve(question)
+        docs = self.retrieve(question)
         answer, final_prompt = self._generate(question, docs)
         return answer, final_prompt

@@ -7,7 +7,7 @@ from api.models.question import Question
 from api.services.rag import RAGService
 
 
-class Server(FastAPI):
+class APIServer(FastAPI):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
