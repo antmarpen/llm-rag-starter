@@ -1,7 +1,8 @@
 import getpass
 import json
 import os
-from typing import List
+from pathlib import Path
+from typing import List, Tuple
 
 from langchain.chat_models import init_chat_model
 from langchain_chroma import Chroma
@@ -37,8 +38,9 @@ class RAGService:
         if os.environ.get("OPENAI_API_KEY"):
             return
 
-        current_directory = os.getcwd()
-        config_path = os.path.join(current_directory + "/api/config/config.json")
+        project_root = str(Path(__file__).resolve().parents[2])
+        config_path = os.path.join(project_root, "api", "config", "config.json")
+
         if os.path.exists(config_path):
             with open(config_path) as config_file:
                 config = json.load(config_file)
@@ -47,8 +49,9 @@ class RAGService:
                     return
         os.environ["OPENAI_API_KEY"] = getpass.getpass("Enter API key for OpenAI: ")
 
-    def retrieve(self, question: str) -> List[Document]:
-        return self.vector_store.similarity_search(question)
+    def retrieve(self, question: str, k: int = 4, threshold: float = 0.9) -> List[Tuple[Document, float]]:
+        results = self.vector_store.similarity_search_with_score(question, k=k)
+        return [(doc, score) for doc, score in results if score <= threshold]
 
     def _generate(self, question: str, docs: List[Document]) -> tuple[str, str]:
         docs_content = "\n\n".join(doc.page_content for doc in docs)
@@ -59,5 +62,6 @@ class RAGService:
 
     def ask(self, question: str) -> tuple[str, str]:
         docs = self.retrieve(question)
-        answer, final_prompt = self._generate(question, docs)
+        docs_only = [doc for doc, score in docs]
+        answer, final_prompt = self._generate(question, docs_only)
         return answer, final_prompt

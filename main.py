@@ -67,8 +67,8 @@ class Application:
         api_port = 5000
         mcp_port = 8000
 
-        use_api = False
-        use_mcp = True
+        use_api = True
+        use_mcp = False
         if use_api:
             config = uvicorn.Config(self.api, host=host, port=api_port, log_config=None, reload=debug)
             server = uvicorn.Server(config)
@@ -80,7 +80,8 @@ class Application:
             self.mcp.settings.host = host
             self.mcp.settings.port = mcp_port
 
-            mcp_transport_protocol = "streamable-http"
+            # mcp_transport_protocol = "streamable-http"
+            mcp_transport_protocol = "stdio"
             self.mcp.run(transport=mcp_transport_protocol)
 
 debug = os.environ.get("DEBUG", "false").lower() in {"1", "true", "yes"}

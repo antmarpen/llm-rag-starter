@@ -52,7 +52,7 @@ class BaseIntegration(ABC):
 
     @staticmethod
     def _split(docs: Iterable[Document]) -> List[Document]:
-        splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+        splitter = RecursiveCharacterTextSplitter(chunk_size=3000, chunk_overlap=500)
         return splitter.split_documents(list(docs))
 
     # ------------------------------------------------------------------
