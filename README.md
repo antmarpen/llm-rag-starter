@@ -32,32 +32,40 @@ The project downloads information from several sources (called *integrations*) a
 ## Architecture for API server
 
 
-![image](docs/images/API.png)
+![API Server](docs/images/API.png)
 
 
-| Step | Component         | Description                                                                                 |
-|------|-------------------|---------------------------------------------------------------------------------------------|
-| 1    | API               | **User request is received** from any channel (UI, Slack, etc.)                             |
-| 2    | API → RAG Service | **API forwards the question** to the RAG Service                                            |
-| 3    | RAG Service       | **Queries the Chroma DB** to retrieve relevant, pre-indexed documents from the integrations |
-| 4    | RAG Service       | **Composes a prompt** with the question and the retrieved context and send it to the LLM    |
-| 5    | LLM               | **Generates an answer** based on the enriched prompt                                        |
-| 6    | RAG Service → API | **Returns the generated response** to the API                                               |
-| 7    | API               | **Sends the final response** back to the user                                               
+| Point | Action                                                                                                     |
+|:-----:|------------------------------------------------------------------------------------------------------------|
+|   1   | **API receives** the user’s request from the browser, script, tools like Postman, etc.                     |
+|   2   | **API forwards** the request to the RAG Service for semantic processing.                                   |
+|   3   | **RAG Service queries** the Chroma vector database to retrieve the most relevant embeddings/documents.     |
+|   4   | **RAG Service sends** the retrieved context plus user query as a prompt to the LLM (OpenAI, Claude, etc.). |
+|   5   | **LLM processes** the prompt and returns a generated response to the RAG Service.                          |
+|   6   | **RAG Service returns** the assembled answer back to the API.                                              |
+|   7   | **API sends** the final response back to the user’s browser.                                               |
 
 ---
 
 ## Architecture for MCP server
 
 
-![image](docs/images/MCP.png)
+![MCP Server](docs/images/MCP.png)
 
+| Point | Action                                                                                     |
+|:-----:|--------------------------------------------------------------------------------------------|
+|   1   | **LLM receives** the user’s request directly from the browser.                             |
+|   2   | **LLM forwards** the request to the MCP server for orchestration.                          |
+|   3   | **MCP server queries** the Chroma DB to retrieve relevant embeddings/documents.            |
+|   4   | **MCP server returns** the assembled context (from Chroma + integrations) back to the LLM. |
+|   5   | **LLM sends** the final generated response back to the user’s browser.                     |
 
-
----
+> **Note**: Before this flow, ensure your chosen LLM is enabled to act as an MCP client (i.e. supports the MCP Server protocol) and is configured with the correct MCP server endpoint so it can connect and exchange messages.
 
 > ℹ️ **Note on step `a`**:  
 > This is not part of the real-time flow. Step `a` represents a periodic and asynchronous process where integrations fetch data from external services (e.g., Blog, Confluence, Jira) and update the Chroma DB in the background.
+
+---
 
 ## How does it work?
 
