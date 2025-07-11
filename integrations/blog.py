@@ -10,7 +10,7 @@ from integrations.core.base import BaseIntegration
 class BlogIntegration(BaseIntegration):
     """Integration that fetches and indexes a demo blog."""
 
-    async def load_documents(self) -> list[Document]:
+    def load_documents(self) -> list[Document]:
         loader = WebBaseLoader(
             web_paths=("https://lilianweng.github.io/posts/2023-06-23-agent/",),
             bs_kwargs={

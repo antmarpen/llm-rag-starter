@@ -54,6 +54,7 @@ class Logger:
     _instances           = {}
     _console_handlers     = []
     _file_handlers = []
+    level = LoggerLevel.INFO
 
     @classmethod
     def set_level(cls, lvl: LoggerLevel):
@@ -62,6 +63,7 @@ class Logger:
         """
         root = logging.getLogger()
         root.setLevel(lvl.level_no)
+        cls.level = lvl
 
         for ch in cls._console_handlers:
             ch.setLevel(lvl.level_no)
@@ -88,7 +90,7 @@ class Logger:
 
         # This prevents other libraries to override this logger configuration
         logging.basicConfig(
-            level=logging.DEBUG,
+            level=cls.level.level_no,
             format="%(asctime)s - [%(levelname)s] %(name)s - %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
             force=True,
