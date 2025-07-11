@@ -8,9 +8,9 @@ from common.db.chroma import ChromaDB
 
 class ChromaService:
 
-    def __init__(self):
+    def __init__(self, use_in_mcp: bool = False):
 
-        self.vector_store: Chroma = ChromaDB.get_instance()
+        self.vector_store: Chroma = ChromaDB.get_instance(use_in_mcp=use_in_mcp)
 
 
     def get_query_results(self, question: str, k: int = 4, threshold: float = 0.9) -> List[Tuple[Document, float]]:

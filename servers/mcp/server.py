@@ -1,7 +1,5 @@
-import logging
 from typing import List, Tuple
 
-from langchain_chroma import Chroma
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.prompts import Prompt
 
@@ -13,9 +11,8 @@ class MCPServer(FastMCP):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        handlers_names = logging.getHandlerNames()
-
-        self.db_service: ChromaService = ChromaService()
+        standalone_execution = kwargs.get("standalone_execution", False)
+        self.db_service: ChromaService = ChromaService(use_in_mcp=standalone_execution)
 
         self.setup_tools()
         self.setup_prompts()
@@ -56,21 +53,15 @@ class MCPServer(FastMCP):
 
 
 if __name__ == "__main__":
-    from langchain_huggingface import HuggingFaceEmbeddings
-    # Initialize and run the server
-    embeddings = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-mpnet-base-v2"
-    )
+    mcp = MCPServer(standalone_execution=True)
 
-    from chromadb import Settings
-    vector_store = Chroma(
-            collection_name="example_collection",
-            embedding_function=embeddings,
-            persist_directory="C:\\Develop\\Proyectos\\llm-rag-starter\\chroma_langchain_db",
-            client_settings=Settings(anonymized_telemetry=False)
-        )
-    mcp = MCPServer(vector_store=vector_store)
-    #mcp.settings.host = "0.0.0.0"
-    #mcp.settings.port = 8000
-    #mcp.run(transport="streamable-http")
-    mcp.run(transport="stdio")
+    from servers.mcp.transport import TransportType
+
+    transport = TransportType.STDIO
+    transport_str = transport.value
+
+    if transport == TransportType.HTTP:
+        mcp.settings.host = "0.0.0.0"
+        mcp.settings.port = 8000
+
+    mcp.run(transport=transport_str)

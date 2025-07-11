@@ -19,7 +19,8 @@ class ChromaDB:
     def get_instance(cls, **config):
         """Return the singleton instance of the Chroma database"""
         if cls._chroma_instance is None:
-            _logger = Logger.get_logger(cls)
+            use_in_mcp = config.get("use_in_mcp", False)
+            _logger = Logger.get_logger(cls, use_in_mcp)
 
             _logger.debug("Loading Chroma database")
 

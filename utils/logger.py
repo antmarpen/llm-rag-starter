@@ -70,7 +70,7 @@ class Logger:
             fh.setLevel(lvl.level_no)
 
     @classmethod
-    def get_logger(cls, clazz: type) -> BaseLogger:
+    def get_logger(cls, clazz: type, use_in_mcp: bool = False) -> BaseLogger:
         """
         Get a configured Logger instance for the given class.
 
@@ -91,6 +91,7 @@ class Logger:
             level=logging.DEBUG,
             format="%(asctime)s - [%(levelname)s] %(name)s - %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
+            force=True,
             handlers=[logging.NullHandler()]
         )
 
@@ -99,13 +100,14 @@ class Logger:
 
         # Configure handlers only once per logger
         if not logger.handlers:
-            # --- Console handler singleton ---
-            ch = logging.StreamHandler()
-            fmt = "%(asctime)s - [%(levelname)s] %(name)s - %(message)s"
-            ch.setFormatter(ColoredFormatter(fmt, "%Y-%m-%d %H:%M:%S"))
-            ch.setLevel(logging.getLogger().level)
-            logger.addHandler(ch)
-            cls._console_handlers.append(ch)
+            if not use_in_mcp:
+                # --- Console handler singleton ---
+                ch = logging.StreamHandler()
+                fmt = "%(asctime)s - [%(levelname)s] %(name)s - %(message)s"
+                ch.setFormatter(ColoredFormatter(fmt, "%Y-%m-%d %H:%M:%S"))
+                ch.setLevel(logging.getLogger().level)
+                logger.addHandler(ch)
+                cls._console_handlers.append(ch)
 
 
             log_path = cls.CORE_LOGFILE
