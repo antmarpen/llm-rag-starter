@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-import asyncio
+import hashlib
 from abc import ABC, abstractmethod
+from time import sleep
 from typing import Iterable, List
 
+from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_chroma import Chroma
-
-import hashlib
 
 from utils.logger import Logger
 
@@ -23,7 +22,7 @@ class BaseIntegration(ABC):
 
 
     @abstractmethod
-    async def load_documents(self) -> List[Document]:
+    def load_documents(self) -> List[Document]:
         """Return a list of documents to store in the vector DB."""
         raise NotImplementedError
 
@@ -52,7 +51,7 @@ class BaseIntegration(ABC):
 
     @staticmethod
     def _split(docs: Iterable[Document]) -> List[Document]:
-        splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+        splitter = RecursiveCharacterTextSplitter(chunk_size=3000, chunk_overlap=500)
         return splitter.split_documents(list(docs))
 
     # ------------------------------------------------------------------
@@ -69,22 +68,22 @@ class BaseIntegration(ABC):
         self.vector_store.add_documents(chunks, ids=ids)
 
 
-    async def run(self) -> None:
+    def run(self) -> None:
         """Periodically load documents and store them."""
         while True:
             self._logger.debug(f"Running integration task: {self.__class__.__name__}")
             try:
-                docs = await self.load_documents()
+                docs = self.load_documents()
                 if docs:
-                    await self._process_documents(docs)
+                    self._process_documents(docs)
             except Exception as exc:  # pragma: no cover - log and continue
                 self._logger.error(
                     f"Integration {self.__class__.__name__} failed: {exc}"
                 )
             self._logger.debug(f"Integration task: {self.__class__.__name__} finished. It will be executed again in {self.get_interval()} seconds.")
-            await asyncio.sleep(self.get_interval())
+            sleep(self.get_interval())
 
-    async def _process_documents(self, docs: Iterable[Document]) -> None:
+    def _process_documents(self, docs: Iterable[Document]) -> None:
         new_docs: List[Document] = []
         modified_docs: List[Document] = []
 
@@ -102,12 +101,12 @@ class BaseIntegration(ABC):
                 continue
 
         if new_docs:
-            await self._handle_new_documents(new_docs)
+            self._handle_new_documents(new_docs)
 
         if modified_docs:
-            await self._handle_modified_documents(modified_docs)
+            self._handle_modified_documents(modified_docs)
 
-    async def _handle_new_documents(self, docs: List[Document]) -> None:
+    def _handle_new_documents(self, docs: List[Document]) -> None:
         for doc in docs:
             doc_id = self._doc_id(doc)
             doc_hash = self._doc_hash(doc)
@@ -115,7 +114,7 @@ class BaseIntegration(ABC):
             self._add_chunks(chunks, doc_id, doc_hash)
             self._logger.debug(f"Added {len(chunks)} chunks for new doc {doc_id}")
 
-    async def _handle_modified_documents(self, docs: List[Document]) -> None:
+    def _handle_modified_documents(self, docs: List[Document]) -> None:
         for doc in docs:
             doc_id = self._doc_id(doc)
             doc_hash = self._doc_hash(doc)
