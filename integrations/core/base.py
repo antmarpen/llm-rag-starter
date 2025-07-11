@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 from abc import ABC, abstractmethod
 from typing import Iterable, List
 
+from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_chroma import Chroma
-
-import hashlib
 
 from utils.logger import Logger
 
@@ -52,7 +51,7 @@ class BaseIntegration(ABC):
 
     @staticmethod
     def _split(docs: Iterable[Document]) -> List[Document]:
-        splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+        splitter = RecursiveCharacterTextSplitter(chunk_size=3000, chunk_overlap=500)
         return splitter.split_documents(list(docs))
 
     # ------------------------------------------------------------------

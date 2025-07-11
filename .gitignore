@@ -1,7 +1,10 @@
 chroma_langchain_db/**
 
-api/config/config.json
+common/config/config.json
 
 .idea
 
 *.log
+
+*.bin
+*.sqlite3

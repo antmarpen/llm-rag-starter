@@ -1,8 +1,9 @@
-import os
 import logging
+import os
+from enum import Enum
 from logging import Logger as BaseLogger
 from logging.handlers import RotatingFileHandler
-from enum import Enum
+
 from colorama import init, Fore, Style
 
 # Initialize colorama for colored output on all platforms
@@ -69,7 +70,7 @@ class Logger:
             fh.setLevel(lvl.level_no)
 
     @classmethod
-    def get_logger(cls, clazz: type) -> BaseLogger:
+    def get_logger(cls, clazz: type, use_in_mcp: bool = False) -> BaseLogger:
         """
         Get a configured Logger instance for the given class.
 
@@ -85,18 +86,28 @@ class Logger:
         if key in cls._instances:
             return cls._instances[key]
 
+        # This prevents other libraries to override this logger configuration
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format="%(asctime)s - [%(levelname)s] %(name)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+            force=True,
+            handlers=[logging.NullHandler()]
+        )
+
         # Create new logger
         logger = logging.getLogger(module_name)
 
         # Configure handlers only once per logger
         if not logger.handlers:
-            # --- Console handler singleton ---
-            ch = logging.StreamHandler()
-            fmt = "%(asctime)s - [%(levelname)s] %(name)s - %(message)s"
-            ch.setFormatter(ColoredFormatter(fmt, "%Y-%m-%d %H:%M:%S"))
-            ch.setLevel(logging.getLogger().level)
-            logger.addHandler(ch)
-            cls._console_handlers.append(ch)
+            if not use_in_mcp:
+                # --- Console handler singleton ---
+                ch = logging.StreamHandler()
+                fmt = "%(asctime)s - [%(levelname)s] %(name)s - %(message)s"
+                ch.setFormatter(ColoredFormatter(fmt, "%Y-%m-%d %H:%M:%S"))
+                ch.setLevel(logging.getLogger().level)
+                logger.addHandler(ch)
+                cls._console_handlers.append(ch)
 
 
             log_path = cls.CORE_LOGFILE
