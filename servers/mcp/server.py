@@ -1,11 +1,11 @@
+import logging
 from typing import List, Tuple
 
-from mcp.server.fastmcp import FastMCP
 from langchain_chroma import Chroma
-
-from api.services.rag import RAGService
-
+from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.prompts import Prompt
+
+from common.services.chroma import ChromaService
 
 
 class MCPServer(FastMCP):
@@ -13,8 +13,9 @@ class MCPServer(FastMCP):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        vector_store: Chroma = kwargs.get("vector_store", None)
-        self.rag_service = RAGService(vector_store)
+        handlers_names = logging.getHandlerNames()
+
+        self.db_service: ChromaService = ChromaService()
 
         self.setup_tools()
         self.setup_prompts()
@@ -41,7 +42,7 @@ class MCPServer(FastMCP):
         """
         Retrieve relevant cybersecurity context (vulnerabilities and processes) via RAG.
         """
-        docs = self.rag_service.retrieve(question, threshold=threshold)
+        docs = self.db_service.get_query_results(question, threshold=threshold)
         return [(doc.page_content, score) for doc, score in docs]
 
     @staticmethod

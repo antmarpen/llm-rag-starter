@@ -28,13 +28,19 @@ class BaseLLMLoader(ABC):
 
     def initialize(self, config: Dict[str, Any]) -> None:
         if self.check_valid_config(config):
-            self.__llm = self.load_models(config)
+            loaded_models = self.load_models(config)
+
+            for model_name, model in loaded_models.items():
+                if model_name not in self.__llm_instances:
+                    self.__llm_instances[model_name] = model
+                else:
+                    raise LLMLoaderConfigException(f"The model {model_name} has been already registered. Please change it to use a different name")
         else:
             raise LLMLoaderConfigException(f"Configuration for {self.__class__.__name__} is not valid")
 
     def get_llm(self, model_name: str) -> BaseLanguageModel:
-        if self.__llm is None or model_name not in self.__llm:
+        if self.__llm_instances is None or model_name not in self.__llm_instances:
             raise LLMLoaderException(f"LLM {self.__class__.__name__} has not been initialized")
 
-        return self.__llm
+        return self.__llm_instances[model_name]
 

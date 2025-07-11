@@ -9,29 +9,33 @@ from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
 
+from common.db.chroma import ChromaDB
 from utils.logger import Logger
 
 
 class RAGService:
     """Simple RAG service using LangChain and Chroma."""
 
-    def __init__(self, vector_store: Chroma) -> None:
+    def __init__(self) -> None:
         self._logger = Logger.get_logger(self.__class__)
 
+        self._logger.debug("Loading RAG service")
         self._logger.debug("Loading LLM")
         self._ensure_api_key()
         self.llm = init_chat_model("gpt-4o-mini", model_provider="openai")
+        self._logger.debug("LLM loaded successfully")
 
-        self.vector_store = vector_store
+        self.vector_store: Chroma = ChromaDB.get_instance()
 
-        self._logger.debug("Loading Prompt")
+        self._logger.debug("Loading prompt")
         self.prompt = ChatPromptTemplate([
             ("human", """You're an assistant for question-and-answer tasks. You will be given the user's question in the following format: "Question: <user's question>", along with related context in the format: "Context: <provided context>". Limit your answer to a maximum of three sentences and keep it concise. If no context is provided, simply respond that you don't have enough information to answer.
                         Question: {question} 
                         Context: {context} 
                         Answer:""")
         ])
-        # self.prompt = hub.pull("rlm/rag-prompt")
+        self._logger.debug("Prompt loaded successfully")
+        self._logger.debug("RAG service loaded successfully")
 
     @staticmethod
     def _ensure_api_key() -> None:
@@ -39,7 +43,7 @@ class RAGService:
             return
 
         project_root = str(Path(__file__).resolve().parents[2])
-        config_path = os.path.join(project_root, "api", "config", "config.json")
+        config_path = os.path.join(project_root, "common", "config", "config.json")
 
         if os.path.exists(config_path):
             with open(config_path) as config_file:

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import bs4
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_core.documents import Document
 

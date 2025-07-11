@@ -1,10 +1,9 @@
 from fastapi import FastAPI
-from langchain_chroma import Chroma
 
-from api.models.answer import Answer
-from api.models.api_response import APIResponse, APIResponseWithData
-from api.models.question import Question
-from api.services.rag import RAGService
+from common.services.rag import RAGService
+from servers.api.models.answer import Answer
+from servers.api.models.api_response import APIResponse, APIResponseWithData
+from servers.api.models.question import Question
 
 
 class APIServer(FastAPI):
@@ -12,8 +11,7 @@ class APIServer(FastAPI):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        vector_store: Chroma = kwargs.get("vector_store", None)
-        self.rag_service = RAGService(vector_store)
+        self.rag_service = RAGService()
 
         self.setup_routes()
 

@@ -1,7 +1,7 @@
+import importlib
 import inspect
 import pkgutil
-import importlib
-from typing import Type, List
+from typing import Type
 
 
 def get_all_subclasses(base_class: Type, package_name: str):

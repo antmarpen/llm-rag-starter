@@ -1,8 +1,9 @@
-import os
 import logging
+import os
+from enum import Enum
 from logging import Logger as BaseLogger
 from logging.handlers import RotatingFileHandler
-from enum import Enum
+
 from colorama import init, Fore, Style
 
 # Initialize colorama for colored output on all platforms
@@ -84,6 +85,14 @@ class Logger:
         key = module_name
         if key in cls._instances:
             return cls._instances[key]
+
+        # This prevents other libraries to override this logger configuration
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format="%(asctime)s - [%(levelname)s] %(name)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+            handlers=[logging.NullHandler()]
+        )
 
         # Create new logger
         logger = logging.getLogger(module_name)

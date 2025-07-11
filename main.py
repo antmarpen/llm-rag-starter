@@ -1,13 +1,11 @@
 import asyncio
 import os
-import uvicorn
-from chromadb import Settings
-from langchain_chroma import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
 
-from api.api_server import APIServer
-from api.mcp_server import MCPServer
+import uvicorn
+
 from integrations.core.manager import IntegrationManager
+from servers.api.server import APIServer
+from servers.mcp.server import MCPServer
 from utils.logger import Logger, LoggerLevel
 
 
@@ -28,33 +26,16 @@ class Application:
 
         self.__logger.info("Starting RAG PoC Server")
 
-        # Embeddings
-        self.__logger.debug("Loading embeddings")
-        self.embeddings = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-mpnet-base-v2"
-        )
-        self.__logger.debug("Embeddings loaded successfully")
-
-        # Chroma database
-        self.__logger.debug("Loading Chroma database")
-        self.vector_store = Chroma(
-            collection_name="example_collection",
-            embedding_function=self.embeddings,
-            persist_directory="./chroma_langchain_db",
-            client_settings=Settings(anonymized_telemetry=False)
-        )
-        self.__logger.debug("Chroma database loaded successfully")
-
         # API Server
-        self.api = APIServer(title="RAG API", vector_store=self.vector_store)
+        self.api = APIServer(title="RAG API")
 
         # MCP Server
-        self.mcp = MCPServer(vector_store=self.vector_store)
+        self.mcp = MCPServer()
 
         # Integration Manager
         self.__logger.info("Initializing integration manager")
         self.integration_manager = IntegrationManager()
-        self.integration_manager.register_all(self.vector_store)
+        self.integration_manager.register_all()
         self.__logger.info("Integration manager initialized successfully")
 
     async def __run_integrations(self):
@@ -68,13 +49,13 @@ class Application:
         mcp_port = 8000
 
         use_api = True
-        use_mcp = False
+        use_mcp = True
         if use_api:
             config = uvicorn.Config(self.api, host=host, port=api_port, log_config=None, reload=debug)
             server = uvicorn.Server(config)
-            self.__logger.info("API Server started successfully")
-            self.__logger.info(f"API Server running on http://{host}:{api_port}")
-            # asyncio.run(await server.serve())
+            self.__logger.info("API server started successfully!")
+            self.__logger.info(f"API server running on http://{host}:{api_port}")
+            asyncio.run(server.serve())
 
         if use_mcp:
             self.mcp.settings.host = host
@@ -82,6 +63,12 @@ class Application:
 
             # mcp_transport_protocol = "streamable-http"
             mcp_transport_protocol = "stdio"
+            self.__logger.info("MCP server started successfully!")
+            if mcp_transport_protocol == "stdio":
+                self.__logger.info(f"MCP server running on STDIO")
+            elif mcp_transport_protocol in ["streamable-http", "sse"]:
+                self.__logger.info(f"MCP server running on http://{host}:{mcp_port}")
+
             self.mcp.run(transport=mcp_transport_protocol)
 
 debug = os.environ.get("DEBUG", "false").lower() in {"1", "true", "yes"}
