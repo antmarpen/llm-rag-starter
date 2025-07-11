@@ -2,9 +2,15 @@
 
 This repository contains a proof of concept (**PoC**) that demonstrates a simple *Retrieval Augmented Generation* (RAG) flow built with Python and [LangChain](https://python.langchain.com/) using [Chroma](https://www.trychroma.com/) as the vector database.
 
+## Demo
+
+Below is a short demo of the MCP server in action. A similar demonstration for the API server is still in progress.
+
+![MCP server demo](docs/videos/demo.gif)
+
 ## Introduction
 
-The project downloads information from several sources (called *integrations*) and stores it in Chroma. From there a small API is exposed so that an LLM can generate answers using those documents.
+The project downloads information from several sources (called *integrations*) and stores it in a Chroma database. From there a small API is exposed so that an LLM can generate answers using those documents.
 
 ## Getting Started
 
@@ -23,10 +29,10 @@ The project downloads information from several sources (called *integrations*) a
    ```
    The service will be available at `http://localhost:5000`.
 
-## Architecture
+## Architecture for API server
 
 
-![image](docs/images/Workflow.png)
+![image](docs/images/API.png)
 
 
 | Step | Component         | Description                                                                                 |
@@ -38,6 +44,15 @@ The project downloads information from several sources (called *integrations*) a
 | 5    | LLM               | **Generates an answer** based on the enriched prompt                                        |
 | 6    | RAG Service → API | **Returns the generated response** to the API                                               |
 | 7    | API               | **Sends the final response** back to the user                                               
+
+---
+
+## Architecture for MCP server
+
+
+![image](docs/images/MCP.png)
+
+
 
 ---
 
