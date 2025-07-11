@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-import asyncio
+import os
+import threading
 from typing import Type
 
 from langchain_chroma import Chroma
@@ -17,6 +18,7 @@ class IntegrationManager:
     def __init__(self) -> None:
         self._logger = Logger.get_logger(self.__class__)
         self._integrations: dict[str, BaseIntegration] = {}
+        self._threads: list[threading.Thread] = []
 
     def register(self, integration: Type[BaseIntegration]) -> None:
 
@@ -41,7 +43,16 @@ class IntegrationManager:
         self._logger.debug("All integrations were registered successfully")
 
 
-    async def start_all(self) -> None:
+    def start_all(self) -> None:
+        """Launch all registered integrations in background threads."""
+        debug = os.environ.get("DEBUG", "false").lower() in {"1", "true", "yes"}
+
         for integration_name, integration in self._integrations.items():
-            self._logger.debug(f"Launching integration task for {integration_name}")
-            asyncio.create_task(integration.run())
+            self._logger.debug(f"Launching integration thread for {integration_name}")
+            thread = threading.Thread(
+                target=lambda integ=integration: integ.run(),
+                name=f"Integration-{integration_name}",
+                daemon=not debug,
+            )
+            thread.start()
+            self._threads.append(thread)
