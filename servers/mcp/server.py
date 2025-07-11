@@ -35,11 +35,11 @@ class MCPServer(FastMCP):
         )
         self.add_prompt(prompt_obj)
 
-    async def search(self, question: str, threshold: float = 0.9) -> List[Tuple[str, float]]:
+    async def search(self, question: str, similarity_distance: float = 0.9) -> List[Tuple[str, float]]:
         """
-        Retrieve relevant cybersecurity context (vulnerabilities and processes) via RAG.
+        Retrieve relevant cybersecurity context (vulnerabilities and processes) via RAG. Use similarity_distance bigger than 1.3 for more results (and also less accuracy)
         """
-        docs = self.db_service.get_query_results(question, threshold=threshold)
+        docs = self.db_service.get_query_results(question, threshold=similarity_distance)
         return [(doc.page_content, score) for doc, score in docs]
 
     @staticmethod
